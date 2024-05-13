@@ -24,7 +24,7 @@ def load_data(file_path, sample_size=None):
 
 # Load a sample of the data
 file_path = 'All_Beauty.jsonl.gz'
-sample_size = 500000  # Adjust the sample size according to your computational capacity
+sample_size = 1000  # Adjust the sample size according to your computational capacity
 df = load_data(file_path, sample_size)
 
 # Filter out users and items with few interactions
@@ -58,6 +58,7 @@ model_item_based = NearestNeighbors(metric='cosine', algorithm='brute')
 model_item_based.fit(user_item_matrix.T)
 
 # Function to recommend items based on item similarity
+# Function to recommend items based on item similarity
 def recommend_items_item_based(item_id, model, train_data, item_id_map, user_item_matrix, top_n=10):
     if item_id not in item_id_map:
         print(f"Item {item_id} not found in the training data.")
@@ -65,7 +66,9 @@ def recommend_items_item_based(item_id, model, train_data, item_id_map, user_ite
     
     item_index = item_id_map[item_id]
     item_vector = user_item_matrix.T[item_index]
-    distances, indices = model.kneighbors(item_vector.toarray().reshape(1, -1), n_neighbors=top_n+1)
+    n_samples = user_item_matrix.T.shape[0]
+    n_neighbors = min(top_n + 1, n_samples)  # Ensure n_neighbors doesn't exceed the available samples
+    distances, indices = model.kneighbors(item_vector.toarray().reshape(1, -1), n_neighbors=n_neighbors)
     similar_item_indices = indices.flatten()[1:]  # Exclude the item itself
     similar_item_ids = [list(item_id_map.keys())[list(item_id_map.values()).index(idx)] for idx in similar_item_indices]
     recommended_items = train_data[train_data['asin'].isin(similar_item_ids)][['asin', 'title']]
